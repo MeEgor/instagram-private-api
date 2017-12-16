@@ -26,6 +26,11 @@ describe("`Timeline` class", function() {
             should(originalCursor).should.not.equal(feed.getCursor())
             feed.moreAvailable.should.be.Boolean();
             feed.moreAvailable.should.equal(true);
+            return feed;
+        })
+        .then(feed => feed.get())
+        .then(medias => {
+            console.log("load more ", medias.length, "medias")
             done()
         })
     })

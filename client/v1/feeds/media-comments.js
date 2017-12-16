@@ -25,9 +25,17 @@ MediaCommentsFeed.prototype.get = function () {
         })
         .send()
         .then(function(data) {
-            that.moreAvailable = data.has_more_comments && !!data.next_max_id;
+            // I am not shure that comments next_max_id is olways object
+            // but sometimes it is
+            var next_max_id
+            try {
+                next_max_id = JSON.parse(data.next_max_id).server_cursor
+            } catch (err) {
+                next_max_id = data.next_max_id
+            }
+            that.moreAvailable = data.has_more_comments && !!next_max_id;
             if (that.moreAvailable) {
-                that.setCursor(data.next_max_id);
+                that.setCursor(next_max_id);
             }
             return _.map(data.comments, function (comment) {
                 comment.pk = comment.pk.c.join("");
