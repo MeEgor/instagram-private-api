@@ -13,16 +13,15 @@ module.exports = Comment;
 
 var Request = require('./request');
 var Account = require('./account');
-var Media = require('./media');
 
 
 Comment.prototype.parseParams = function (json) {
-  var hash = camelKeys(json);
-  hash.created = json.created_at;
-  hash.status = (json.status || "unknown").toLowerCase();
-  hash.id = json.pk || json.id;
-  this.account = new Account(this.session, json.user);
-  return hash;
+    var hash = camelKeys(json);
+    hash.created = json.created_at;
+    hash.status = (json.status || "unknown").toLowerCase();
+    this.id = json.pk ? json.pk.c.join("") : json.id;
+    this.account = new Account(this.session, json.user);
+    return hash;
 };
 
 

@@ -24,14 +24,14 @@ describe("`MediaComments` class", function() {
             comments[0].params.should.have.property('created')
             comments[0].params.created.should.be.Number();
             comments[0].params.should.have.property('text')
-            comments[0].params.text.should.be.String();
+            comments[0].params.text.should.be.String()
 
             _.each(comments, function(comment) {
                 comment.should.be.instanceOf(Client.Comment)
             })
             should(originalCursor).should.not.equal(feed.getCursor())
-            feed.moreAvailable.should.be.Boolean();
-            feed.moreAvailable.should.equal(true);
+            feed.moreAvailable.should.be.Boolean()
+            feed.moreAvailable.should.equal(true)
             return feed
         })
         .then(feed => feed.get())

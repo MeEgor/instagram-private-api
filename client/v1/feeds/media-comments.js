@@ -38,8 +38,6 @@ MediaCommentsFeed.prototype.get = function () {
                 that.setCursor(next_max_id);
             }
             return _.map(data.comments, function (comment) {
-                comment.pk = comment.pk.c.join("");
-                comment.media_id = that.mediaId;
                 return new Comment(that.session, comment);
             });
         })
