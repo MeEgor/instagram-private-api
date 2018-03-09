@@ -4,6 +4,10 @@ var _ = require("lodash");
 var crypto = require('crypto');
 var camelKeys = require('camelcase-keys');
 
+var parsePK = function(pk) {
+    return pk.c.join('0'.repeat(pk.e + pk.s - pk.c.map(el => el.toString().length).reduce((a,b) => a + b)))
+}
+
 function Comment(session, params) {
     Resource.apply(this, arguments);
 }
@@ -19,7 +23,7 @@ Comment.prototype.parseParams = function (json) {
     var hash = camelKeys(json);
     hash.created = json.created_at;
     hash.status = (json.status || "unknown").toLowerCase();
-    this.id = json.pk ? json.pk.c.join("") : json.id;
+    this.id = json.pk ? parsePK(json.pk) : json.id;
     this.account = new Account(this.session, json.user);
     return hash;
 };
