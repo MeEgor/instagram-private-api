@@ -2,7 +2,7 @@ var _ = require("lodash");
 var Promise = require("bluebird");
 var request = require('request-promise');
 var JSONbig = require('json-bigint');
-var Agent = require('socks5-https-client/lib/Agent');
+var ProxyAgent = require('proxy-agent');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
@@ -57,20 +57,17 @@ Request.setTimeout = function (ms) {
     Request.requestClient = request.defaults(object);
 }
 
-Request.setProxy = function (proxyUrl) {
-    if(!Helpers.isValidUrl(proxyUrl))
+Request.setProxy = function(proxyUrl) {
+    if (!Helpers.isValidUrl(proxyUrl)) {
         throw new Error("`proxyUrl` argument is not an valid url")
-    var object = { 'proxy': proxyUrl };    
-    Request.requestClient = request.defaults(object);
-}
+    }
+    var proxyParams = {
+        agent: new ProxyAgent(proxyUrl)
+    }
 
-Request.setSocks5Proxy = function (host, port) {
-    var object = { agentClass: Agent,
-    agentOptions: {
-        socksHost: host, // Defaults to 'localhost'.
-        socksPort: port // Defaults to 1080.
-    }};
-    Request.requestClient = request.defaults(object);
+    console.log("Set global proxy:", session.proxyUrl)
+
+    Request.requestClient = request.defaults(proxyParams);
 }
 
 Object.defineProperty(Request.prototype, "session", {
@@ -225,10 +222,22 @@ Request.prototype.setSession = function(session) {
     this.setOptions({
         jar: session.jar
     });
-    if(session.device)
+
+    if(session.device) {
         this.setDevice(session.device);
-    if(session.proxyUrl)
-        this.setOptions({proxy: session.proxyUrl});
+    }
+
+    if(session.proxyUrl) {
+        console.log("Set session proxy:", session.proxyUrl)
+
+        if (!Helpers.isValidUrl(session.proxyUrl)) {
+            throw new Error("`proxyUrl` argument is not an valid url")
+        }
+        this.setOptions({
+            agent: new ProxyAgent(session.proxyUrl)
+        });
+    }        
+
     return this;
 };
 
