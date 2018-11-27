@@ -14,7 +14,10 @@ _.each(CONSTANTS.WEB_ROUTES, function (val, key) {
 exports.getUrl = function(key, data) {
     if(!_.isFunction(URLs[key])) 
         throw new Error("Url with key `"+ key +"` is not available");
-    return CONSTANTS.API_ENDPOINT + URLs[key](data || {});   
+    var result = CONSTANTS.API_ENDPOINT + URLs[key](data || {});
+
+    // console.log("getUrl -> ", result)
+    return result
 }
 
 exports.getWebUrl = function(key, data) {

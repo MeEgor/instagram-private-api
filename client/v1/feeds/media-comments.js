@@ -16,11 +16,10 @@ var Comment = require('../comment');
 
 
 MediaCommentsFeed.prototype.getCursor = function () {
-    if(typeof this.cursor === 'string'){
-      this.cursor = JSON.parse(this.cursor);
+    if (typeof this.cursor === 'string') {
+      return encodeURIComponent(this.cursor)
     }
-
-    return this.cursor ? this.cursor.server_cursor : this.cursor;
+    return this.cursor
 };
 
 MediaCommentsFeed.prototype.get = function () {
@@ -33,19 +32,12 @@ MediaCommentsFeed.prototype.get = function () {
         })
         .send()
         .then(function(data) {
-            // I am not shure that comments next_max_id is olways object
-            // but sometimes it is
-            var next_max_id
-            try {
-                next_max_id = JSON.parse(data.next_max_id).server_cursor
-            } catch (err) {
-                next_max_id = data.next_max_id
-            }
-            that.moreAvailable = data.has_more_comments && !!next_max_id;
+            that.moreAvailable = data.has_more_comments && !!data.next_max_id;
             if (that.moreAvailable) {
-                that.setCursor(next_max_id);
+                that.setCursor(data.next_max_id);
             }
             return _.map(data.comments, function (comment) {
+                comment.media_id = that.mediaId;
                 return new Comment(that.session, comment);
             });
         })
