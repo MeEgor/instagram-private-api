@@ -6,3 +6,8 @@ tests/tmp/*
 tests/credentials.json
 tests/cookies/*
 try-*.js
+php-*
+cookies/
+test*
+Untitled*
+.idea

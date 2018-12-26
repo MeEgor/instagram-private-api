@@ -40,8 +40,13 @@ var CONSTANTS = require('./constants');
 var Session = require('./session');
 
 Request.defaultHeaders = {
-    'X-IG-Connection-Type': 'WIFI',
-    'X-IG-Capabilities': '3QI=',
+    'X-IG-Connection-Type': CONSTANTS.HEADERS.X_IG_Connection_Type,
+    'X-IG-Capabilities': CONSTANTS.HEADERS.X_IG_Capabilities,
+    'X-IG-App-ID': CONSTANTS.HEADERS.FB_ANALYTICS_APPLICATION_ID,
+    'X-IG-Connection-Speed': Math.round(Helpers.getRandomArbitrary(1000, 3700)) + 'kbps',
+    'X-IG-Bandwidth-Speed-KBPS': '-1.000',
+    'X-IG-Bandwidth-TotalBytes-B': '0',
+    'X-IG-Bandwidth-TotalTime-MS': '0',
     'Accept-Language': 'en-US',
     'Host': CONSTANTS.HOSTNAME,
     'Accept': '*/*',
@@ -51,6 +56,10 @@ Request.defaultHeaders = {
 
 
 Request.requestClient = request.defaults({});
+
+Request.jar = function (store) {
+    return request.jar(store);
+}
 
 Request.setTimeout = function (ms) {
     var object = { 'timeout': parseInt(ms) };
@@ -195,6 +204,7 @@ Request.prototype.setUrl = function(url) {
 
 Request.prototype.setResource = function(resource, data) {
     this._resource = resource;
+    console.log(routes.getUrl(resource, data));
     this.setUrl(routes.getUrl(resource, data));
     return this;
 };
@@ -216,7 +226,7 @@ Request.prototype.setCSRFToken = function(token) {
 
 Request.prototype.setSession = function(session) {
     if(!(session instanceof Session))
-        throw new Error("`session` parametr must be instance of `Session`")
+        throw new Error("`session` parameter must be instance of `Session`")
     this._session = session;
     this.setCSRFToken(session.CSRFToken);
     this.setOptions({
@@ -244,7 +254,7 @@ Request.prototype.setSession = function(session) {
 
 Request.prototype.setDevice = function(device) {
     if(!(device instanceof Device))
-        throw new Error("`device` parametr must be instance of `Device`") 
+        throw new Error("`device` parameter must be instance of `Device`") 
     this._device = device;
     this.setHeaders({
         'User-Agent': device.userAgent()
