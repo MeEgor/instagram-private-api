@@ -15,14 +15,18 @@ import { Relationship } from './v1/relationship';
 import CookieStorage = require('./v1/cookie-storage');
 
 export class Session {
-  private jar: any;
+  private _jar: any;
 
   constructor(public device: Device, public cookieStore: CookieStorage, proxy?: string) {
-    this.jar = Request.jar(cookieStore.store);
+    this._jar = Request.jar(cookieStore.store);
     if (_.isString(proxy) && !_.isEmpty(proxy)) this.proxyUrl = proxy;
   }
 
   private _proxyUrl: string;
+  
+  get jar(): any {
+    return this._jar
+  }
 
   get proxyUrl() {
     return this._proxyUrl;
@@ -59,7 +63,7 @@ export class Session {
   }
 
   get CSRFToken() {
-    const cookies = this.jar.getCookies(CONSTANTS.HOST);
+    const cookies = this._jar.getCookies(CONSTANTS.HOST);
     const item = _.find(cookies, { key: 'csrftoken' });
     // @ts-ignore
     return item ? item.value : 'missing';

@@ -1,19 +1,20 @@
-import * as _ from 'lodash';
-import * as Bluebird from 'bluebird';
-import * as request from 'request-promise';
-import * as JSONbig from 'json-bigint';
-import * as ProxyAgent from 'proxy-agent';
-import * as Exceptions from './exceptions';
-import * as routes from './routes';
-import * as Helpers from './helpers';
-import * as CONSTANTS from './constants/constants';
-import { Session } from './session';
-import { Device } from './devices/device';
+import * as _ from 'lodash'
+import * as Bluebird from 'bluebird'
+import * as request from 'request-promise'
+import * as JSONbig from 'json-bigint'
+import * as Exceptions from './exceptions'
+import * as routes from './routes'
+import * as Helpers from './helpers'
+import * as CONSTANTS from './constants/constants'
+import { Session } from './session'
+import { Device } from './devices/device'
+import * as Socks5HttpsAgent from 'socks5-https-client/lib/Agent'
+import * as url from 'url'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 
 export class Request {
-  static requestClient: any = request.defaults({});
+  static requestClient: any = request.defaults({})
   _request: any;
   protected _resource: any;
   private _signData: boolean;
@@ -52,36 +53,36 @@ export class Request {
 
   protected _device: Device;
 
-  get device() {
+  get device(): Device {
     return this._device;
   }
 
   set device(device) {
-    this.setDevice(device);
+    this.setDevice(device)
   }
 
-  _url: any;
+  _url: any
 
   get url() {
-    return this._url;
+    return this._url
   }
 
   set url(url) {
-    this.setUrl(url);
+    this.setUrl(url)
   }
 
-  private _session: Session;
+  private _session: Session
 
-  get session() {
-    return this._session;
+  get session(): Session {
+    return this._session
   }
 
   set session(session) {
-    this.setSession(session);
+    this.setSession(session)
   }
 
   static jar(store) {
-    return request.jar(store);
+    return request.jar(store)
   }
 
   static setTimeout(ms) {
@@ -89,10 +90,8 @@ export class Request {
     Request.requestClient = request.defaults(object);
   }
 
-  static setProxy(proxyUrl) {
-    if (!Helpers.isValidUrl(proxyUrl)) throw new Error('`proxyUrl` argument is not an valid url');
-    const object = { agent: new ProxyAgent(proxyUrl) };
-    Request.requestClient = request.defaults(object);
+  static setProxy(proxyUrl: string) {
+    throw new Error(`setting proxy url in request is disabled!`)
   }
 
   _transform = t => t;
@@ -187,18 +186,45 @@ export class Request {
     return this;
   }
 
-  setSession(session) {
+  setSession(session: Session): Request {
     this._session = session;
     this.setCSRFToken(session.CSRFToken);
     this.setOptions({
-      jar: session.jar,
-    });
-    if (session.device) this.setDevice(session.device);
-    if (session.proxyUrl) this.setOptions({ agent: new ProxyAgent(session.proxyUrl) });
-    return this;
+      jar: session.jar
+    })
+    /**
+     * Set device from session
+     */
+    if (session.device) {
+      this.setDevice(session.device)
+    }
+    /**
+     * Set proxy from session
+     */
+    if (session.proxyUrl) {
+      if (!Helpers.isValidUrl(session.proxyUrl)) {
+        throw new Error('`proxyUrl` argument is not an valid url')
+      }
+      const urlParams = url.parse(session.proxyUrl)
+      const auth: string[] = urlParams.auth.split(":")
+      const socksUsername: string = auth[0]
+      const socksPassword: string = auth[1]
+      const options = {
+        agentClass: Socks5HttpsAgent,
+        agentOptions: {
+          socksHost: urlParams.hostname,
+          socksPort: urlParams.port,
+          socksUsername: socksUsername,
+          socksPassword: socksPassword,
+        }
+      }
+      this.setOptions(options)
+    }
+
+    return this
   }
 
-  setDevice(device) {
+  setDevice(device: Device) {
     this._device = device;
     this.setHeaders({
       'User-Agent': device.userAgent(),

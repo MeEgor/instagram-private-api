@@ -1,11 +1,16 @@
-import { Media } from '../../models/media';
-import { plainToClass } from 'class-transformer';
-import { Request } from '../../request';
-import { BaseFeed } from './_base.feed';
+import { Media } from '../../models/media'
+import { plainToClass } from 'class-transformer'
+import { Request } from '../../request'
+import { BaseFeed } from './_base.feed'
+import { Session } from 'src/v1'
 
 export class UserMediaFeed extends BaseFeed {
-  constructor(session, public accountId, public limit: number | null = null) {
-    super(session);
+  constructor (
+    public session: Session, 
+    public accountId: string, 
+    public limit: number | null = null
+  ) {
+    super(session)
   }
 
   async get(): Promise<Media[]> {
@@ -15,11 +20,12 @@ export class UserMediaFeed extends BaseFeed {
         id: this.accountId,
         maxId: this.getCursor(),
       })
-      .send();
-    this.moreAvailable = data.more_available && !!data.next_max_id;
+      .send()
+
+    this.moreAvailable = data.more_available && !!data.next_max_id
     if (this.moreAvailable) {
-      this.setCursor(data.next_max_id);
+      this.setCursor(data.next_max_id)
     }
-    return plainToClass(Media, data.items);
+    return plainToClass(Media, data.items)
   }
 }
