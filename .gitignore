@@ -8,6 +8,8 @@ tests/cookies/*
 try-*.js
 php-*
 cookies/
-test*
+sandbox.*
 Untitled*
 .idea
+.env
+dist
