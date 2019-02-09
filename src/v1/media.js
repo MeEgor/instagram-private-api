@@ -1,6 +1,7 @@
 import { plainToClass } from 'class-transformer';
 import { User } from '../models/user';
 import { Request } from '../request';
+import { Media as MediaModel } from '../models/media'
 
 const Resource = require('./resource');
 const _ = require('lodash');
@@ -13,12 +14,13 @@ const Exceptions = require('../exceptions');
 const camelKeys = require('camelcase-keys');
 
 export class Media extends Resource {
+
   static getById (session, id) {
     return new Request(session)
       .setMethod('GET')
       .setResource('mediaInfo', { mediaId: id })
       .send()
-      .then(json => new Media(session, json.items[0]));
+      .then(json => plainToClass(MediaModel, json.items[0]))
   }
 
   static getByUrl (session, url) {
@@ -56,7 +58,7 @@ export class Media extends Resource {
       .then(json => {
         if (json.did_delete) return;
         throw new Exceptions.RequestError({
-          messaage: 'Not posible to delete medium!',
+          messaage: 'Not posible to delete media!',
         });
       });
   }
@@ -80,7 +82,7 @@ export class Media extends Resource {
       .send()
       .then(json => {
         if (json.media.caption_is_edited) {
-          return new Media(session, json.media);
+          return plainToClass(MediaModel, json.media);
         }
         throw new Exceptions.RequestError({
           messaage: 'Edit media not successful!',
@@ -131,7 +133,7 @@ export class Media extends Resource {
           .signPayload()
           .send();
       })
-      .then(json => new Media(session, json.media));
+      .then(json => plainToClass(MediaModel, json.media))
   }
 
   static configurePhotoStory (session, uploadId, width, height) {
@@ -172,7 +174,7 @@ export class Media extends Resource {
           .signPayload()
           .send();
       })
-      .then(json => new Media(session, json.media));
+      .then(json => plainToClass(MediaModel, json.media))
   }
 
   static configureVideo (
@@ -241,7 +243,7 @@ export class Media extends Resource {
           .generateUUID()
           .signPayload()
           .send()
-          .then(json => new Media(session, json.media))
+          .then(json => plainToClass(MediaModel, json.media))
           .catch(Exceptions.TranscodeTimeoutError, (
             error, //Well, we just want to repeat our request. Dunno why this is happening and we should not let our users deal with this crap themselves.
           ) => Media.configureVideo(session, uploadId, caption, durationms, delay));

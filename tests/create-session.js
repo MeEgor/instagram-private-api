@@ -55,4 +55,16 @@ function sendComment() {
     .catch(err => console.log(err.message))
 }
 
-sendComment()
+function getMediaIngo() {
+  const mediaId = "1844223108983287281_5932999115"
+  Client.Session.create(device, storage, userName, password)
+    .then(session => {
+      return Client.Media.getById(session, mediaId)
+    })
+    .then(media => {
+      debugger
+    })
+    .catch(err => console.log(err.message))
+}
+
+getMediaIngo()
