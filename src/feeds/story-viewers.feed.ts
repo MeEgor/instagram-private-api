@@ -1,10 +1,10 @@
-import { BaseFeed } from './_base.feed';
-import { Request } from '../../request';
+import { AbstractFeed } from './abstract.feed';
+import { Request } from '../core/request';
 import { plainToClass } from 'class-transformer';
-import { User } from '../../models/user';
+import { User } from '../models/user';
 
 // Only works with the stories of the logged user
-export class StoryViewersFeed extends BaseFeed {
+export class StoryViewersFeed extends AbstractFeed<User> {
   constructor(session, public mediaId) {
     super(session);
   }

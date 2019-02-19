@@ -1,16 +1,12 @@
-import { Media } from '../../models/media'
-import { plainToClass } from 'class-transformer'
-import { Request } from '../../request'
-import { BaseFeed } from './_base.feed'
-import { Session } from 'src/v1'
+import { Media } from '../models/media';
+import { plainToClass } from 'class-transformer';
+import { Request } from '../core/request';
+import { AbstractFeed } from './abstract.feed';
+import { Session } from 'src/core/session';
 
-export class UserMediaFeed extends BaseFeed {
-  constructor (
-    public session: Session, 
-    public accountId: string, 
-    public limit: number | null = null
-  ) {
-    super(session)
+export class UserMediaFeed extends AbstractFeed<Media> {
+  constructor(session:Session, public accountId, public limit = Infinity) {
+    super(session);
   }
 
   async get(): Promise<Media[]> {

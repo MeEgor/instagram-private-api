@@ -1,10 +1,10 @@
 const _ = require('lodash');
-import { BaseFeed } from './_base.feed';
+import { AbstractFeed } from './abstract.feed';
 
-const Thread = require('../thread');
-const { Request } = require('../../request');
+const Thread = require('../v1/thread');
+const { Request } = require('../core/request');
 
-class InboxPendingFeed extends BaseFeed {
+class InboxPendingFeed extends AbstractFeed {
   constructor (session, limit) {
     super(...arguments);
     this.limit = parseInt(limit) || null;

@@ -1,70 +1,88 @@
-const _ = require('lodash');
-const Promise = require('bluebird');
-const Exceptions = require('../../exceptions');
-const EventEmitter = require('events').EventEmitter;
+import * as Chance from 'chance';
+import * as _ from 'lodash';
+import * as Bluebird from 'bluebird';
+import { ParseError, RequestsLimitError } from '../core/exceptions';
+import { EventEmitter } from 'events';
+import { Session } from '../core/session';
 
-export class BaseFeed extends EventEmitter {
-  constructor (session) {
+export interface IBaseFeedAllOptions {
+  delay: number;
+  every: number;
+  pause: number;
+  maxErrors: number;
+  limit: number;
+}
+
+export abstract class AbstractFeed<T> extends EventEmitter {
+  allResults = [];
+  totalCollected = 0;
+  cursor = null;
+  moreAvailable = null;
+  iteration = 0;
+  // Pause multiplier.
+  parseErrorsMultiplier = 0;
+  public rankToken: string;
+  limit: number;
+  _stopAll: boolean = false;
+  public timeout: number;
+  private allResultsMap: any;
+  private _allResultsLentgh: number;
+
+  protected constructor(public session: Session) {
     super();
-    this.session = session;
-    this.allResults = [];
-    this.totalCollected = 0;
-    this.cursor = null;
-    this.moreAvailable = null;
-    this.iteration = 0;
-    // Pause multiplier.
-    this.parseErrorsMultiplier = 0;
+    const chance = new Chance();
+    this.rankToken = chance.guid();
   }
 
-  all (parameters) {
-    const that = this;
-    parameters = _.isObject(parameters) ? parameters : {};
-    _.defaults(parameters, {
+  abstract async get(...parameters: any[]): Promise<T[]>
+
+  all(parameters: Partial<IBaseFeedAllOptions> = {}) {
+    parameters = Object.assign({
       delay: 1500,
       every: 200,
       pause: 30000,
       maxErrors: 9,
-      limit: this.limit,
-    });
+      limit: this.limit || Infinity,
+    }, parameters);
     // every N requests we take a pause
     const delay =
       this.iteration === 0 ? 0 : this.iteration % parameters.every !== 0 ? parameters.delay : parameters.pause;
     return (
-      Promise.delay(delay)
+      Bluebird.delay(delay)
         .then(this.get.bind(this))
         .then(results => {
           // reset pause multiplier when we can execute requests again
-          that.parseErrorsMultiplier = 0;
+          this.parseErrorsMultiplier = 0;
           return results;
         })
         // If ParseError, we assume that this is 403 forbidden HTML page, caused by "Too many requests". Just take a pause and retry.
-        .catch(Exceptions.ParseError, () => {
+        .catch(ParseError, () => {
           // Every consecutive ParseError makes delay befor new request longer. Otherwise we will never reach the end.
-          that.parseErrorsMultiplier++;
+          this.parseErrorsMultiplier++;
           // When delay time is beyond reasonable, throw exception.
-          if (that.parseErrorsMultiplier > parameters.maxErrors) throw new Exceptions.RequestsLimitError();
-          return Promise.resolve([]).delay(parameters.pause * that.parseErrorsMultiplier);
+          if (this.parseErrorsMultiplier > parameters.maxErrors) throw new RequestsLimitError();
+          return Bluebird.resolve([]).delay(parameters.pause * this.parseErrorsMultiplier);
         })
         .then(response => {
-          const results = response.filter(that.filter).map(that.map);
-          if (_.isFunction(that.reduce)) that.allResults = that.reduce(that.allResults, results);
-          that.totalCollected += response.length;
+          const results = response.filter(this.filter).map(this.map);
+          if (_.isFunction(this.reduce)) this.allResults = this.reduce(this.allResults, results);
+          this.totalCollected += response.length;
 
-          that._handleInfinityListBug(response, results);
+          this._handleInfinityListBug(response, results);
 
-          that.emit('data', results);
+          this.emit('data', results);
           let exceedLimit = false;
 
-          if ((parameters.limit && that.totalCollected > parameters.limit) || that._stopAll === true)
+          if ((parameters.limit && this.totalCollected > parameters.limit) || this._stopAll === true)
             exceedLimit = true;
 
-          if (that.isMoreAvailable() && !exceedLimit) {
-            that.iteration++;
-            return that.all(parameters);
+          if (this.isMoreAvailable() && !exceedLimit) {
+            this.iteration++;
+            return this.all(parameters);
           } else {
-            that.iteration = 0;
-            that.emit('end', that.allResults);
-            return that.allResults;
+            this.iteration = 0;
+            this.emit('end', this.allResults);
+            return this.allResults;
           }
         })
     );
@@ -78,7 +96,7 @@ export class BaseFeed extends EventEmitter {
    * feed.map = follower => follower.id;
    * feed.all();
    * */
-  map (item) {
+  map(item) {
     return item;
   }
 
@@ -90,11 +108,11 @@ export class BaseFeed extends EventEmitter {
     feed.on('data', results => console.log(feed.allResults)) // here will be total amount of collected items every request.
     console.log( await feed.all() ) // here will be total amount of collected items in the end.
    * */
-  reduce (accumulator, response) {
+  reduce(accumulator, response) {
     return accumulator.concat(response);
   }
 
-  filter () {
+  filter() {
     return true;
   }
 
@@ -104,7 +122,7 @@ export class BaseFeed extends EventEmitter {
    * And if it is not - we stop collecting.
    * To see this bug try to collect AccountFollowingFeed of id 1571836453 */
 
-  _handleInfinityListBug (response, results) {
+  _handleInfinityListBug(response, results) {
     const that = this;
     /* For RAM economy we can store only 2 last results, not all. So every 2 iterations we release memory  */
     if (this.iteration % 2 === 0) {
@@ -121,27 +139,27 @@ export class BaseFeed extends EventEmitter {
   }
 
   // Stops collecting results with .all() method. Will wait unfinished request.
-  stop () {
+  stop() {
     this._stopAll = true;
   }
 
-  setCursor (cursor) {
+  setCursor(cursor) {
     this.cursor = cursor;
   }
 
-  getCursor () {
+  getCursor() {
     return this.cursor;
   }
 
-  isMoreAvailable () {
+  isMoreAvailable() {
     return !!this.moreAvailable;
   }
 
-  allSafe (parameters, timeout = 10 * 60 * 1000) {
+  allSafe(parameters, timeout = 10 * 60 * 1000) {
     const that = this;
     return this.all(parameters)
       .timeout(timeout || this.timeout)
-      .catch(Promise.TimeoutError, reason => {
+      .catch(Bluebird.TimeoutError, reason => {
         that.stop();
         throw reason;
       });

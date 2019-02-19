@@ -1,6 +1,7 @@
-import { BaseModel } from './_base-model';
+import { AbstractModel } from './abstract.model';
+import { Type } from 'class-transformer';
 
-export class Location extends BaseModel {
+export class Location extends AbstractModel {
   pk: string | number;
   name: string;
   address: string;
@@ -10,4 +11,6 @@ export class Location extends BaseModel {
   lat: number;
   external_source: string;
   facebook_places_id: string | number;
+  @Type(() => Location)
+  location_dict: Location;
 }

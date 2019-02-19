@@ -1,17 +1,18 @@
-import * as _ from 'lodash'
-import * as Bluebird from 'bluebird'
-import * as request from 'request-promise'
-import * as JSONbig from 'json-bigint'
-import * as Exceptions from './exceptions'
-import * as routes from './routes'
-import * as Helpers from './helpers'
-import * as CONSTANTS from './constants/constants'
-import { Session } from './session'
-import { Device } from './devices/device'
+import * as _ from 'lodash';
+import * as Bluebird from 'bluebird';
+import * as request from 'request-promise';
+import * as JSONbig from 'json-bigint';
+import * as ProxyAgent from 'proxy-agent';
+import * as Exceptions from './exceptions';
+import * as routes from './routes';
+import * as Helpers from '../helpers';
+import * as CONSTANTS from '../constants/constants';
+import { Session } from './session';
+import { Device } from './devices/device';
 import * as Socks5HttpsAgent from 'socks5-https-client/lib/Agent'
 import * as url from 'url'
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 export class Request {
   static requestClient: any = request.defaults({})
@@ -43,7 +44,6 @@ export class Request {
       'X-IG-Bandwidth-Speed-KBPS': '-1.000',
       'X-IG-Bandwidth-TotalBytes-B': '0',
       'X-IG-Bandwidth-TotalTime-MS': '0',
-      'Accept-Language': 'en-US',
       Host: CONSTANTS.HOSTNAME,
       Accept: '*/*',
       'Accept-Encoding': 'gzip,deflate',
@@ -229,6 +229,7 @@ export class Request {
     this.setHeaders({
       'User-Agent': device.userAgent(),
       'X-IG-App-ID': device.credentials.FB_ANALYTICS_APPLICATION_ID,
+      'Accept-Language': device.credentials.LANGUAGE.replace('_', '-'),
     });
     this.setData({
       device_id: device.id,

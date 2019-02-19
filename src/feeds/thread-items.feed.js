@@ -1,11 +1,11 @@
 const _ = require('lodash');
 const util = require('util');
-import { BaseFeed } from './_base.feed';
+import { AbstractFeed } from './abstract.feed';
 
-const ThreadItem = require('../thread-item');
-const { Request } = require('../../request');
+const ThreadItem = require('../v1/thread-item');
+const { Request } = require('../core/request');
 
-class ThreadItemsFeed extends BaseFeed {
+class ThreadItemsFeed extends AbstractFeed {
   constructor (session, threadId, limit) {
     super(...arguments);
     this.threadId = threadId;
