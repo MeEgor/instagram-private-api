@@ -1,11 +1,11 @@
 import { Media } from '../models/media';
 import { plainToClass } from 'class-transformer';
-import { Request } from '../core/request';
+import { Request } from '../core';
 import { AbstractFeed } from './abstract.feed';
 import { Session } from 'src/core/session';
 
 export class UserMediaFeed extends AbstractFeed<Media> {
-  constructor(session:Session, public accountId, public limit = Infinity) {
+  constructor(session: Session, public accountId: string | number, public limit = Infinity) {
     super(session);
   }
 

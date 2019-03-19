@@ -5,12 +5,12 @@ import * as JSONbig from 'json-bigint';
 import * as ProxyAgent from 'proxy-agent';
 import * as Exceptions from './exceptions';
 import * as routes from './routes';
-import * as Helpers from '../helpers';
 import * as CONSTANTS from '../constants/constants';
 import { Session } from './session';
 import { Device } from './devices/device';
 import * as Socks5HttpsAgent from 'socks5-https-client/lib/Agent'
 import * as url from 'url'
+import { Helpers } from '../helpers';
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
@@ -311,7 +311,7 @@ export class Request {
     throw new Exceptions.RequestError(json);
   }
 
-  send(options = {}, attemps = 0) {
+  send(options = {}, attemps = 0): Bluebird<any> {
     return Bluebird.try(async () => {
       const rawResponse = await this.sendAndGetRaw(options);
       const parsedResponse = this.parseMiddleware(rawResponse);
@@ -321,26 +321,26 @@ export class Request {
         throw new Exceptions.TranscodeTimeoutError();
       throw new Exceptions.RequestError(json);
     })
-      .catch(err => {
-        if (err instanceof Exceptions.APIError) throw err;
-        if (!err || !err.response) throw err;
-        const response = err.response;
-        if (response.statusCode === 404) throw new Exceptions.NotFoundError(response);
-        if (response.statusCode >= 500) {
-          if (attemps++ <= this.attempts) {
-            return this.send(options, attemps);
-          } else {
-            throw new Exceptions.ParseError(response, this);
-          }
+    .catch(err => {
+      if (err instanceof Exceptions.APIError) throw err;
+      if (!err || !err.response) throw err;
+      const response = err.response;
+      if (response.statusCode === 404) throw new Exceptions.NotFoundError(response);
+      if (response.statusCode >= 500) {
+        if (attemps++ <= this.attempts) {
+          return this.send(options, attemps);
         } else {
-          this.errorMiddleware(response);
+          throw new Exceptions.ParseError(response, this);
         }
-      })
-      .catch(error => {
-        if (error instanceof Exceptions.APIError) throw error;
-        error = _.defaults(error, { message: 'Fatal internal error!' });
-        throw new Exceptions.RequestError(error);
-      });
+      } else {
+        this.errorMiddleware(response);
+      }
+    })
+    .catch(error => {
+      if (error instanceof Exceptions.APIError) throw error;
+      error = _.defaults(error, { message: 'Fatal internal error!' });
+      throw new Exceptions.RequestError(error);
+    });
   }
 
   sendAndGetRaw(options = {}) {

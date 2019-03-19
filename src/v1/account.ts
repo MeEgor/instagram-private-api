@@ -1,13 +1,12 @@
+import * as _ from 'lodash';
+import * as Bluebird from 'bluebird';
 import { plainToClass } from 'class-transformer';
 import { User } from '../models/user';
-import * as Exceptions from '../core/exceptions';
-import * as _ from 'lodash';
-import { Request } from '../core/request';
-import { Session } from '../core/session';
-import Helpers = require('../helpers');
+import { Request, Session, IGAccountNotFoundError, RequestError } from '../core';
+import { Helpers } from '../helpers';
 
 export class Account {
-  static async getById(session: Session, id): Promise<User> {
+  static async getById(session: Session, id: string | number): Promise<User> {
     const data = await new Request(session)
       .setMethod('GET')
       .setResource('userInfo', { id })
@@ -29,9 +28,10 @@ export class Account {
   }
 
   static async searchForUser(session: Session, username: string): Promise<User> {
+    username = username.toLowerCase();
     const accounts = await Account.search(session, username);
     const account = accounts.find(account => account.username === username);
-    if (!account) throw new Exceptions.IGAccountNotFoundError();
+    if (!account) throw new IGAccountNotFoundError();
     return account;
   }
 
@@ -67,7 +67,7 @@ export class Account {
     return plainToClass(User, data.user as User);
   }
 
-  static editProfile(session: Session, settings: any): Promise<User> {
+  static editProfile(session: Session, settings: any): Bluebird<User> {
     settings = _.isObject(settings) ? settings : {};
     if (_.isString(settings.phoneNumber)) settings.phone_number = settings.phoneNumber;
     if (_.isString(settings.fullName)) settings.first_name = settings.fullName;
@@ -93,7 +93,7 @@ export class Account {
       })
       .catch(e => {
         if (e && e.json && e.json.message && _.isArray(e.json.message.errors)) {
-          throw new Exceptions.RequestError({
+          throw new RequestError({
             message: e.json.message.errors.join('. '),
           });
         }

@@ -1,23 +1,33 @@
 import * as _ from 'lodash';
 import * as Chance from 'chance';
-import * as Exceptions from './exceptions';
 import * as CONSTANTS from '../constants/constants';
-import * as Helpers from '../helpers';
+import { Helpers } from '../helpers';
 import * as Bluebird from 'bluebird';
 import { Device } from './devices/device';
 import { Internal } from '../v1/internal';
-import { StoryTrayFeed } from '../feeds/story-tray.feed';
-import { TimelineFeed } from '../feeds/timeline.feed';
+import { InboxFeed, StoryTrayFeed, TimelineFeed } from '../feeds';
 import { Request } from './request';
 import { Account } from '../v1/account';
-import { InboxFeed } from '../feeds/inbox.feed';
 import { Relationship } from '../v1/relationship';
-import CookieStorage = require('../v1/cookie-storage');
+import { CookieStorage } from './cookies';
+import { CookieJar } from 'tough-cookie';
+import {
+  AccountBannedError,
+  AuthenticationError,
+  CheckpointError,
+  CookieNotValidError,
+  RequestError,
+} from './exceptions';
 
 export class Session {
   private _jar: any;
+  public loginAttemptCount = 0;
 
-  constructor(public device: Device, public cookieStore: CookieStorage, proxy?: string) {
+  constructor(
+    public device: Device, 
+    public cookieStore: CookieStorage, 
+    proxy?: string
+  ) {
     this._jar = Request.jar(cookieStore.store);
     if (_.isString(proxy) && !_.isEmpty(proxy)) this.proxyUrl = proxy;
   }
@@ -58,6 +68,10 @@ export class Session {
     return this.device.phoneId;
   }
 
+  get device_id() {
+    return this.device.id;
+  }
+
   get advertising_id() {
     return this.device.adid;
   }
@@ -69,61 +83,28 @@ export class Session {
     return item ? item.value : 'missing';
   }
 
-  static create(device, storage, username, password, proxy) {
+  /**
+   *  @deprecated Use Session instance methods for login instead of static
+   */
+  static create(device: Device, storage: CookieStorage, username: string, password: string, proxy?: string): Bluebird<Session> {
     const session = new Session(device, storage);
-    if (_.isString(proxy) && !_.isEmpty(proxy)) session.proxyUrl = proxy;
-    return session
-      .getAccountId()
-      .then(
-        () =>
-          // Disabled for the moment
-          // But `loginFlow` should be called every time the user closes an reopen the app.
-          //return session.loginFlow()
-          //    .then(() => session)
-          session,
-      )
-      .catch(Exceptions.CookieNotValidError, () =>
-        // We either not have valid cookes or authentication is not fain!
-        Session.login(session, username, password),
-      );
+    if (!_.isEmpty(proxy)) session.proxyUrl = proxy;
+    return session.getAccountId()
+      .then(() => session)
+      // We either not have valid cookes or authentication is not fain!
+      .catch(CookieNotValidError, () => Session.login(session, username, password));
   }
-
-  static login(session, username, password) {
+  /**
+   *  @deprecated Use Session instance methods for login instead of static
+   */
+  static login(session: Session, username: string, password: string): Bluebird<Session> {
     return Bluebird.try(async () => {
       await session.preLoginFlow();
-      await new Request(session)
-        .setResource('login')
-        .setMethod('POST')
-        .setData({
-          username,
-          password,
-          guid: session.uuid,
-          phone_id: session.phone_id,
-          adid: session.adid,
-          login_attempt_count: 0,
-        })
-        .signPayload()
-        .send();
-      await session.loginFlow();
+      await session.login(username, password);
+      // Call login flow after returning the result
+      _.defer(async () => await session.loginFlow());
       return session;
     })
-      .catch(Exceptions.CheckpointError, async error => {
-        // This situation is not really obvious,
-        // but even if you got checkpoint error (aka captcha or phone)
-        // verification, it is still an valid session unless `sessionid` missing
-        await session.getAccountId().catch(Exceptions.CookieNotValidError, () => {
-          throw error;
-        });
-        return session;
-      })
-      .catch(error => {
-        if (error.name === 'RequestError' && _.isObject(error.json)) {
-          if (error.json.invalid_credentials) throw new Exceptions.AuthenticationError(error.message);
-          if (error.json.error_type === 'inactive user')
-            throw new Exceptions.AccountBanned(`${error.json.message} ${error.json.help_url}`);
-        }
-        throw error;
-      });
   }
 
   setDevice(device: Device) {
@@ -140,8 +121,9 @@ export class Session {
     return this;
   }
 
-  getAccount() {
-    return this.getAccountId().then(id => Account.getById(this, id));
+  async getAccount() {
+    const accountId = await this.getAccountId();
+    return Account.getById(this, accountId);
   }
 
   destroy() {
@@ -154,6 +136,43 @@ export class Session {
         this.cookieStore.destroy();
         delete this.cookieStore;
         return response;
+      });
+  }
+
+  login(username, password) {
+    return new Request(this)
+      .setResource('login')
+      .setMethod('POST')
+      .setData({
+        username,
+        password,
+        guid: this.uuid,
+        phone_id: this.phone_id,
+        device_id: this.device_id,
+        adid: this.advertising_id,
+        google_tokens: '[]',
+        login_attempt_count: this.loginAttemptCount++,
+      })
+      .signPayload()
+      .send()
+      .tap(() => this.loginAttemptCount = 0)
+      .catch(CheckpointError, async error => {
+        // This situation is not really obvious,
+        // but even if you got checkpoint error (aka captcha or phone)
+        // verification, it is still an valid session unless `sessionid` missing
+        await this.getAccountId()
+          .catch(CookieNotValidError, () => {
+            throw error;
+          });
+        return this;
+      })
+      .catch(RequestError, error => {
+        if (_.isObject(error.json)) {
+          if (error.json.invalid_credentials) throw new AuthenticationError(error.message);
+          if (error.json.error_type === 'inactive user')
+            throw new AccountBannedError(`${error.json.message} ${error.json.help_url}`);
+        }
+        throw error;
       });
   }
 
@@ -182,6 +201,7 @@ export class Session {
     return Bluebird.map(
       [
         Internal.qeSync(this, true),
+        Internal.readMsisdnHeader(this),
         Internal.launcherSync(this, true),
         Internal.logAttribution(this),
         Internal.fetchZeroRatingToken(this),
@@ -192,5 +212,13 @@ export class Session {
     ).catch(error => {
       throw new Error(error.message);
     });
+  }
+
+  serializeCookies(): Bluebird<string> {
+    return Bluebird.fromCallback(cb => this.jar._jar.serialize(cb));
+  }
+
+  async deserializeCookies(cookies: string) {
+    this.jar._jar = await Bluebird.fromCallback(cb => CookieJar.deserialize(cookies, this.cookieStore.store, cb))
   }
 }
