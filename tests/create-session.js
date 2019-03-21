@@ -1,4 +1,5 @@
 const { V1: Client } = require('../dist')
+
 const userName = "egorknv"
 const password = "LoGo100501"
 const device = new Client.Device(userName)
@@ -8,63 +9,50 @@ const proxy = "socks5://services_hlmedia_tv:57xp9ivQ@91.218.246.99:54293"
 function createSession() {
   Client.Session.create(device, storage, userName, password, proxy)
     .then(session => {
-      console.log("SESSION:", session)
+      console.log("SUCCESS! -> session created!")
+      return Client.Account.showProfile(session)
+        .then(user => {
+          console.log("SUCCESS! -> profile", user)
+          return session.getAccountId()
+        })
+        .then(accountId => {
+          const feed = new Client.Feed.UserMedia(session, accountId)
+          return feed.get().then(medias => {
+            console.log("SUCCESS! -> medias", medias.length)
+          })
+        })
+        .then(_ => {
+          const mediaId = "1844223108983287281_5932999115"
+          return Client.Media.getById(session, mediaId)
+            .then(media => {
+              console.log("SUCCESS! -> media", media.id)
+            })
+            .then(_ => {
+              const text = "Nice!"
+              return Client.Comment.create(session, mediaId, text)
+            })
+            .then(comment => {
+              console.log("SUCCESS! -> commrnt created", comment.params)
+              return Client.Comment.delete(session, mediaId, comment.id)
+            })
+            .then(data => {
+              console.log("SUCCESS! -> comment deleted", data)
+            })
+        })
     })
-    .catch(err => {
-      console.log(err.message)
-    })
+    .catch(err => console.log("ERROR:", err.message))
 }
 
-function getProfile() {
-  Client.Session.create(device, storage, userName, password, proxy)
-    .then(session => {
-      return  Client.Account.showProfile(session)
-    })
-    .then(user => {
-      console.log("SUCCESS!", user)
-    })
-    .catch(err => console.log(err.message))
-}
-
-function getSelfMediaFeed() {
-  Client.Session.create(device, storage, userName, password, proxy)
-    .then(session => {
-      return session.getAccountId().then(accountId => {
-        const feed = new Client.Feed.UserMedia(session, accountId)
-        return feed.all()
-      })
-      .then(medias => {
-        console.log("SUCCESS!")
-        console.log(medias)
-      })
-    })
-}
-
-function sendComment() {
-  const text = "Yo! Foo Bar!"
+Client.Session.create(device, storage, userName, password, proxy).then(session => {
   const mediaId = "1844223108983287281_5932999115"
-
-  Client.Session.create(device, storage, userName, password, proxy)
-    .then(session => {
-      return Client.Comment.create(session, mediaId, text)
-    })
-    .then(comment => {
-      console.log("SUCCESS!")
-      debugger
-    })
-    .catch(err => console.log(err.message))
-}
-
-function getMediaIngo() {
-  const mediaId = "1844223108983287281_5932999115"
-  Client.Session.create(device, storage, userName, password)
-    .then(session => {
-      return Client.Media.getById(session, mediaId)
-    })
-    .then(media => {
-      debugger
-    })
-    .catch(err => console.log(err.message))
-}
-
-getMediaIngo()
+  const text = "Ahahahh! Nice way to get shower =))"
+  return Client.Comment.create(session, mediaId, text)
+})
+.then(comment => {
+  debugger
+})
+.catch(err => {
+  console.log("Error!")
+  debugger
+})
+// createSession()

@@ -231,9 +231,9 @@ export class Request {
       'X-IG-App-ID': device.credentials.FB_ANALYTICS_APPLICATION_ID,
       'Accept-Language': device.credentials.LANGUAGE.replace('_', '-'),
     });
-    this.setData({
-      device_id: device.id,
-    });
+    // this.setData({
+    //   device_id: device.id,
+    // });
     return this;
   }
 
@@ -346,6 +346,7 @@ export class Request {
   sendAndGetRaw(options = {}) {
     const preparedData = this._prepareData();
     const requestOptions = this._transform(_.defaults(this._mergeOptions(options), preparedData));
+    console.log("sendAndGetRaw", requestOptions)
     return Request.requestClient(requestOptions);
   }
 }

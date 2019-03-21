@@ -73,6 +73,9 @@ export class Device {
   signRequestPayload(payload) {
     const json = _.isString(payload) ? payload : pruned(payload);
     const signature = hmac(json, this.credentials.SIG_KEY).toString();
+
+    console.log("DATA:", json)
+
     return {
       signed_body: `${signature}.${json}`,
       ig_sig_key_version: this.credentials.SIG_VERSION,

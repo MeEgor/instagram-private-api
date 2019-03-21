@@ -86,24 +86,41 @@ export class Session {
   /**
    *  @deprecated Use Session instance methods for login instead of static
    */
-  static create(device: Device, storage: CookieStorage, username: string, password: string, proxy?: string): Bluebird<Session> {
-    const session = new Session(device, storage);
-    if (!_.isEmpty(proxy)) session.proxyUrl = proxy;
+  static create(
+    device: Device, 
+    storage: CookieStorage, 
+    username: string, 
+    password: string, 
+    proxy?: string
+  ): Bluebird<Session> {
+    console.log("static Session.create:", username, password, proxy)
+    const session = new Session(device, storage)
+
+    if (!_.isEmpty(proxy)) {
+      session.proxyUrl = proxy
+    }
+
     return session.getAccountId()
       .then(() => session)
       // We either not have valid cookes or authentication is not fain!
-      .catch(CookieNotValidError, () => Session.login(session, username, password));
+      .catch(CookieNotValidError, () => Session.login(session, username, password))
   }
+
   /**
    *  @deprecated Use Session instance methods for login instead of static
    */
-  static login(session: Session, username: string, password: string): Bluebird<Session> {
+  static login(
+    session: Session, 
+    username: string, 
+    password: string
+  ): Bluebird<Session> {
+    console.log("static Session.login:", username, password)
     return Bluebird.try(async () => {
-      await session.preLoginFlow();
-      await session.login(username, password);
+      await session.preLoginFlow()
+      await session.login(username, password)
       // Call login flow after returning the result
-      _.defer(async () => await session.loginFlow());
-      return session;
+      _.defer(async () => await session.loginFlow())
+      return session
     })
   }
 
@@ -139,7 +156,8 @@ export class Session {
       });
   }
 
-  login(username, password) {
+  login(username: string, password: string) {
+    console.log("Session.login:", username, password)
     return new Request(this)
       .setResource('login')
       .setMethod('POST')
@@ -179,6 +197,9 @@ export class Session {
   loginFlow(concurrency = 1) {
     // Right now only requests after closing and re-opening the app are made
     // Later we should also include requests made after a full re-login.
+
+    console.log("Session.loginFlow")
+
     return Bluebird.map(
       [
         new TimelineFeed(this).get({}),
@@ -197,6 +218,9 @@ export class Session {
   }
 
   preLoginFlow(concurrency = 1) {
+
+    console.log("Session.preLoginFlow")
+    
     // Only on full re-login.
     return Bluebird.map(
       [
