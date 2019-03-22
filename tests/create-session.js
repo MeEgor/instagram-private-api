@@ -45,14 +45,28 @@ function createSession() {
 
 Client.Session.create(device, storage, userName, password, proxy).then(session => {
   const mediaId = "1844223108983287281_5932999115"
-  const text = "Ahahahh! Nice way to get shower =))"
-  return Client.Comment.create(session, mediaId, text)
+
+  return Client.Media.getById(session, mediaId)
+    .then(media => {
+      console.log("SUCCESS! -> media", media.id)
+      debugger
+    })
 })
-.then(comment => {
-  debugger
-})
-.catch(err => {
-  console.log("Error!")
-  debugger
-})
+
+// Client.Session.create(device, storage, userName, password, proxy).then(session => {
+//   const mediaId = "1844223108983287281_5932999115"
+//   return Client.Like.create(session, mediaId, {
+//     module_name: "profile",
+//     username: "zordon.100",
+//     user_id: "5932999115"
+//   }, true)
+// })
+// .then(like => {
+//   debugger
+// })
+// .catch(err => {
+//   console.log("Error!")
+//   debugger
+// })
+
 // createSession()

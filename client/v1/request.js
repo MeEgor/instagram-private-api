@@ -268,13 +268,18 @@ Request.prototype.setDevice = function(device) {
 
 Request.prototype.signData = function () {
     var that = this;
-    if(!_.includes(['POST', 'PUT', 'PATCH', 'DELETE'], this._request.method))
+    if(!_.includes(['POST', 'PUT', 'PATCH', 'DELETE'], this._request.method)) {
         throw new Error("Wrong request method for signing data!");
+    }
+
     return signatures.sign(this._request.data)
         .then(function (data) {
             that.setHeaders({
                 'User-Agent': that.device.userAgent(data.appVersion)
             });
+
+            console.log("Request.prototype.signData -> data:", data)
+
             return {
                 signed_body: data.signature + "." + data.payload,
                 ig_sig_key_version: data.sigKeyVersion

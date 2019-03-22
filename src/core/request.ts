@@ -20,6 +20,10 @@ export class Request {
   protected _resource: any;
   private _signData: boolean;
   private attempts = 2;
+  // sometimes instagram need unsigned data in post request
+  // forexample in like request
+  // for d (doubletap) param
+  private _unsignedPostData: Object
 
   constructor(session: Session) {
     this._url = null;
@@ -33,6 +37,7 @@ export class Request {
     };
     this._request.headers = Request.defaultHeaders;
     this.session = session;
+    this._unsignedPostData = {}
   }
 
   static get defaultHeaders() {
@@ -110,8 +115,18 @@ export class Request {
     this._request.method = method;
     return this;
   }
+  
+  /**
+   * set key and value for unsigned post data
+   * @param key param name
+   * @param value param value
+   */
+  setUnsignPostData(key: string, value: string): Request {
+    this._unsignedPostData[key] = value
+    return this
+  }
 
-  setData(data, override?) {
+  setData(data: Object, override?: boolean) {
     if (_.isEmpty(data)) {
       this._request.data = {};
       return this;
@@ -163,7 +178,9 @@ export class Request {
   }
 
   setUrl(url) {
-    if (!_.isString(url) || !Helpers.isValidUrl(url)) throw new Error('The `url` parameter must be valid url string');
+    if (!_.isString(url) || !Helpers.isValidUrl(url)) {
+      throw new Error('The `url` parameter must be valid url string');
+    }
     this._url = url;
     return this;
   }
@@ -238,9 +255,12 @@ export class Request {
   }
 
   signData() {
-    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(this._request.method) === false)
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(this._request.method) === false) {
       throw new Error('Wrong request method for signing data!');
-    return this.device.signRequestPayload(this._request.data);
+    }
+    const signedData = this.device.signRequestPayload(this._request.data)
+    // add unsigned post data to form data
+    return _.defaults(signedData, this._unsignedPostData);
   }
 
   _prepareData() {
@@ -346,7 +366,9 @@ export class Request {
   sendAndGetRaw(options = {}) {
     const preparedData = this._prepareData();
     const requestOptions = this._transform(_.defaults(this._mergeOptions(options), preparedData));
-    console.log("sendAndGetRaw", requestOptions)
+
+    console.log("Request.ts => sendAndGetRaw, requestOptions:", requestOptions)
+
     return Request.requestClient(requestOptions);
   }
 }
