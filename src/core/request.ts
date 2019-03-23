@@ -316,6 +316,9 @@ export class Request {
       const rawResponse = await this.sendAndGetRaw(options);
       const parsedResponse = this.parseMiddleware(rawResponse);
       const json = parsedResponse.body;
+
+      console.log("RESPONSE: <-", json)
+
       if (_.isObject(json) && json.status === 'ok') return _.omit(parsedResponse.body, 'status');
       if (_.isString(json.message) && json.message.toLowerCase().includes('transcode timeout'))
         throw new Exceptions.TranscodeTimeoutError();
@@ -325,14 +328,19 @@ export class Request {
       if (err instanceof Exceptions.APIError) throw err;
       if (!err || !err.response) throw err;
       const response = err.response;
-      if (response.statusCode === 404) throw new Exceptions.NotFoundError(response);
+
+      if (response.statusCode === 404) {
+        throw new Exceptions.NotFoundError(response);
+      }
+
       if (response.statusCode >= 500) {
         if (attemps++ <= this.attempts) {
           return this.send(options, attemps);
         } else {
           throw new Exceptions.ParseError(response, this);
         }
-      } else {
+      } 
+      else {
         this.errorMiddleware(response);
       }
     })
@@ -346,7 +354,16 @@ export class Request {
   sendAndGetRaw(options = {}) {
     const preparedData = this._prepareData();
     const requestOptions = this._transform(_.defaults(this._mergeOptions(options), preparedData));
-    console.log("sendAndGetRaw", requestOptions)
+    
+    console.log("REQUEST ->", requestOptions.method, requestOptions.url)
+    console.log("HEADERS:")
+    Object.keys(requestOptions.headers).forEach(k => {
+      console.log(`    ${k} => ${requestOptions.headers[k]}`)
+    })
+    if (requestOptions.formData) {
+      console.log("FORM DATA:", requestOptions.formData)
+    }
+    
     return Request.requestClient(requestOptions);
   }
 }
