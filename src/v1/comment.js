@@ -39,38 +39,32 @@ function generateUserBreadcrumb(text) {
 }
 
 class Comment extends Resource {
-  static create (session, mediaId, text) {
-    return session.getAccountId().then(accountId => {
-      return new Request(session)
-        .setMethod('POST')
-        .setResource('comment', { id: mediaId })
-        .generateUUID()
-        .setData({
-          user_breadcrumb: generateUserBreadcrumb(text),
-          idempotence_token: crypto.createHash('md5').update(text).digest('hex'),
-          _uid: accountId,
-          comment_text: text,
-          radio_type: 'wifi-none',
-          containermodule: 'comments_feed_timeline',
-        })
-        .signPayload()
-        .send()
-    })
-    .then(data => new Comment(session, data.comment))
+
+  static async create (session, mediaId, text) {
+    return new Request(session)
+      .setMethod('POST')
+      .setResource('comment', { id: mediaId })
+      .generateUUID()
+      .setData({
+        user_breadcrumb: generateUserBreadcrumb(text),
+        idempotence_token: crypto.createHash('md5').update(text).digest('hex'),
+        _uid: await session.getAccountId(),
+        comment_text: text,
+        radio_type: 'wifi-none',
+        containermodule: 'comments_feed_timeline',
+      })
+      .signPayload()
+      .send()
+      .then(data => new Comment(session, data.comment))
   }
 
-  static delete (session, mediaId, commentId) {
+  static async delete (session, mediaId, commentId) {
     return new Request(session)
       .setMethod('POST')
       .setResource('commentDelete', { id: mediaId, commentId })
       .generateUUID()
       .setData({
-        media_id: mediaId,
-        src: 'profile',
-        idempotence_token: crypto
-          .createHash('md5')
-          .update(commentId)
-          .digest('hex'),
+        _uid: await session.getAccountId(),
       })
       .signPayload()
       .send()

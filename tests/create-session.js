@@ -1,4 +1,5 @@
 const { V1: Client } = require('../dist')
+const Promise = require('bluebird')
 
 const userName = "egorknv"
 const password = "LoGo100501"
@@ -43,16 +44,40 @@ function createSession() {
     .catch(err => console.log("ERROR:", err.message))
 }
 
+const mediaId = "1844223108983287281_5932999115"
+const text = "Foo Bar"
 Client.Session.create(device, storage, userName, password, proxy).then(session => {
-  const mediaId = "1844223108983287281_5932999115"
-  const text = "Ahahahh! Nice way to get shower =))"
-  return Client.Comment.create(session, mediaId, text)
+  return Client.Comment.create(session, mediaId, text).then(comment => {
+    return Promise.delay(5000).then(_ => {
+      return Client.Comment.delete(session, mediaId, comment.id)
+    })
+  })
 })
-.then(comment => {
-  debugger
-})
-.catch(err => {
-  console.log("Error!")
-  debugger
-})
+
+// Client.Session.create(device, storage, userName, password, proxy).then(session => {
+//   const mediaId = "1844223108983287281_5932999115"
+
+//   return Client.Media.getById(session, mediaId)
+//     .then(media => {
+//       console.log("SUCCESS! -> media", media.id)
+//       debugger
+//     })
+// })
+
+// Client.Session.create(device, storage, userName, password, proxy).then(session => {
+//   const mediaId = "1844223108983287281_5932999115"
+//   return Client.Like.create(session, mediaId, {
+//     module_name: "profile",
+//     username: "zordon.100",
+//     user_id: "5932999115"
+//   }, true)
+// })
+// .then(like => {
+//   debugger
+// })
+// .catch(err => {
+//   console.log("Error!")
+//   debugger
+// })
+
 // createSession()

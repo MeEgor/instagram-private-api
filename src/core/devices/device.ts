@@ -71,11 +71,11 @@ export class Device {
   }
 
   signRequestPayload(payload) {
-    const json = _.isString(payload) ? payload : pruned(payload);
-    const signature = hmac(json, this.credentials.SIG_KEY).toString();
+    const json_data = _.isString(payload) ? payload : pruned(payload);
+    const signature = hmac(json_data, this.credentials.SIG_KEY).toString();
 
     return {
-      signed_body: `${signature}.${json}`,
+      signed_body: `${signature}.${json_data}`,
       ig_sig_key_version: this.credentials.SIG_VERSION,
     };
   }
