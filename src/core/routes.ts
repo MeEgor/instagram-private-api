@@ -32,7 +32,7 @@ export const ROUTES = {
   friendshipPendingApprove: 'friendships/approve/<%= id %>/',
   friendshipRemoveFollower: 'friendships/remove_follower/<%= id %>/',
   userInfo: 'users/<%= id %>/info/',
-  userFeed: 'feed/user/<%= id %>/?exclude_comment=<% withComments ? "true" : "false" %><%= maxId ? ("&max_id=" + maxId) : "" %>&only_fetch_first_carousel_media=false',
+  userFeed: 'feed/user/<%= id %>/?exclude_comment=<%= excludeComment ? "true" : "false" %><%= maxId ? ("&max_id=" + maxId) : "" %>&only_fetch_first_carousel_media=false',
   timelineFeed: 'feed/timeline/',
   tagFeed: 'feed/tag/<%= encodeURI(tag) %>/?<%= maxId ? ("max_id=" + maxId + "&") : "" %>rank_token=<%= rankToken %>',
   selfLikedFeed: 'feed/liked/<%= maxId ? ("?max_id=" + maxId) : "" %>',

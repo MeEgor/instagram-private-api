@@ -17,9 +17,10 @@ function createSession() {
           return session.getAccountId()
         })
         .then(accountId => {
-          const feed = new Client.Feed.UserMedia(session, accountId)
+          const feed = new Client.Feed.UserMedia(session, accountId, {
+            excludeComment: false
+          })
           return feed.get().then(medias => {
-            debugger
             console.log("SUCCESS! -> medias", medias.length)
           })
         })

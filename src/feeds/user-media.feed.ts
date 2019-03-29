@@ -8,10 +8,19 @@ export class UserMediaFeed extends AbstractFeed<Media> {
   constructor(
     session: Session, 
     public accountId: string | number, 
-    public limit = Infinity, 
-    public withComments = true
+    public config: {
+      limit?: number
+      excludeComment?: boolean
+    } = {}
   ) {
-    super(session);
+    super(session)
+
+    this.config = Object.assign({
+      limit: Infinity,
+      excludeComment: false
+    }, config)
+
+    this.limit = this.config.limit
   }
 
   async get(): Promise<Media[]> {
@@ -20,7 +29,7 @@ export class UserMediaFeed extends AbstractFeed<Media> {
       .setResource('userFeed', {
         id: this.accountId,
         maxId: this.getCursor(),
-        withComments: this.withComments
+        excludeComment: this.config.excludeComment
       })
       .send()
 
