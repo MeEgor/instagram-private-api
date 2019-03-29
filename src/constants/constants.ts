@@ -1,6 +1,7 @@
 export import EXPERIMENTS = require('./experiments.json');
 export import LOGIN_EXPERIMENTS = require('./login-experiments.json');
 export import SUPPORTED_CAPABILITIES = require('./supported-capabilities.json');
+export import SUPPORTED_CAPABILITIES_NEW = require('./supported-capabilities-new.json');
 
 export const APP_CREDENTIALS = {
   SIG_KEY: '19ce5f445dbfd9d29c59dc2a78c616a7fc090a8e018b9267bc4240a30244c53b',

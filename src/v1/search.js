@@ -6,7 +6,7 @@ import { Helpers } from '../helpers';
 const Hashtag = require('./hashtag');
 const Location = require('./location');
 
-module.exports = (session, query) =>
+const topSearch = (session, query) =>
   session
     .getAccountId()
     .then(id =>
@@ -38,3 +38,36 @@ module.exports = (session, query) =>
         hashtags,
       };
     });
+
+  const topSearchFlat = (session, query) => {
+    return new Request(session)
+      .setMethod('GET')
+      .setResource('topSearchFlat', {
+        query
+      })
+      .send()
+      .then(result => {
+        return {
+          clearClientCache: result.clear_client_cache,
+          hasMore: result.has_more,
+          rankToken: result.rank_token,
+          list: result.list.map(item => {
+            let data = {
+              position: item.position
+            }
+            if ("user" in item) data.user = plainToClass(User, item.user)
+            if ("place" in item) data.place = new Location(session, item.place)
+            if ("hashtag" in item) data.hashtag = new Hashtag(session, item.hashtag)
+
+            return data
+          })
+        }
+      })
+  }
+
+
+
+    module.exports = {
+      topSearch,
+      topSearchFlat
+    }

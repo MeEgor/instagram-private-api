@@ -1,6 +1,10 @@
 import * as Bluebird from 'bluebird';
 import { Request, Session } from '../core';
-import { LOGIN_EXPERIMENTS, SUPPORTED_CAPABILITIES } from '../constants/constants';
+import { 
+  LOGIN_EXPERIMENTS, 
+  SUPPORTED_CAPABILITIES,
+  SUPPORTED_CAPABILITIES_NEW
+} from '../constants/constants';
 
 export class Internal {
   static readMsisdnHeader (session: Session): Bluebird<any> {
@@ -166,5 +170,32 @@ export class Internal {
       })
       .setBodyType('form')
       .send();
+  }
+
+  static getStorySupportedCapabilities(session: Session, accountId: string): Bluebird<any> {
+    return new Request(session)
+      .setMethod("GET")
+      .setResource('storyCapabilities', {
+        id: accountId,
+        supported_capabilities_new: encodeURIComponent(JSON.stringify(SUPPORTED_CAPABILITIES_NEW))
+      })
+      .setBodyType('form')
+      .send()
+  }
+
+  static getUserHighlightsTray(session: Session, accountId: string): Bluebird<any> {
+    return new Request(session)
+      .setMethod("GET")
+      .setHeaders({
+        'X-DEVICE-ID': session.uuid,
+      })
+      .setBodyType('form')
+      .setResource('userHighlightsTray', {
+        id: accountId,
+        supported_capabilities_new: encodeURIComponent(JSON.stringify(SUPPORTED_CAPABILITIES_NEW)),
+        phone_id: session.phone_id
+      })
+      .setBodyType('form')
+      .send()
   }
 }

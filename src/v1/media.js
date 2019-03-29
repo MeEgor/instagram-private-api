@@ -15,6 +15,13 @@ const camelKeys = require('camelcase-keys');
 
 export class Media extends Resource {
 
+  static getMediaCommentInfo(session, id) {
+    return new Request(session)
+      .setMethod('GET')
+      .setResource('mediaCommentInfo', { id: id })
+      .send()
+  }
+
   static getById (session, id) {
     return new Request(session)
       .setMethod('GET')

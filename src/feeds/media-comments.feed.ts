@@ -23,6 +23,7 @@ export class MediaCommentsFeed extends AbstractFeed<Comment> {
       .setResource('mediaComments', resource)
       .send()
       .catch(reason => {
+        debugger
         if (reason.json.message === 'Media is unavailable') throw new MediaUnavailableError();
         else throw reason;
       });

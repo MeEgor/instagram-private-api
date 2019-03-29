@@ -32,19 +32,17 @@ export const ROUTES = {
   friendshipPendingApprove: 'friendships/approve/<%= id %>/',
   friendshipRemoveFollower: 'friendships/remove_follower/<%= id %>/',
   userInfo: 'users/<%= id %>/info/',
-  userFeed: 'feed/user/<%= id %>/?<%= maxId ? ("max_id=" + maxId) : "" %>',
+  userFeed: 'feed/user/<%= id %>/?exclude_comment=true<%= maxId ? ("&max_id=" + maxId) : "" %>&only_fetch_first_carousel_media=false',
   timelineFeed: 'feed/timeline/',
   tagFeed: 'feed/tag/<%= encodeURI(tag) %>/?<%= maxId ? ("max_id=" + maxId + "&") : "" %>rank_token=<%= rankToken %>',
   selfLikedFeed: 'feed/liked/<%= maxId ? ("?max_id=" + maxId) : "" %>',
   storyViewers: 'media/<%= mediaId %>/list_reel_media_viewer/<%= maxId ? ("?max_id=" + maxId) : "" %>',
   locationFeed: 'feed/location/<%= id %>/?<%= maxId ? ("max_id=" + maxId + "&") : "" %>rank_token=<%= rankToken %>',
-  followingFeed:
-    'friendships/<%= id %>/following/?<%= maxId ? ("max_id=" + maxId + "&") : "" %>rank_token=<%= rankToken %>',
+  followingFeed: 'friendships/<%= id %>/following/?<%= maxId ? ("max_id=" + maxId + "&") : "" %>rank_token=<%= rankToken %>',
   followersFeed: 'friendships/<%= id %>/followers/<%= maxId ? ("?max_id=" + maxId) : "" %>',
   savedFeed: 'feed/saved/<%= maxId ? ("?max_id=" + maxId) : "" %>',
-
-  topSearch:
-    'fbsearch/topsearch/?rank_token=<%= rankToken %>&query=<%= encodeURIComponent(query) %>&context=blended&timezone_offset=10800',
+  topSearch: 'fbsearch/topsearch/?rank_token=<%= rankToken %>&query=<%= encodeURIComponent(query) %>&context=blended&timezone_offset=10800',
+  topSearchFlat: 'fbsearch/topsearch_flat/?timezone_offset=0&count=30&query=<%= encodeURIComponent(query) %>&context=blended',
   accountsSearch: 'users/search/?is_typehead=true&q=<%= encodeURIComponent(query) %>&rank_token=<%= rankToken %>',
   hashtagsSearch: 'tags/search/?count=50&q=<%= encodeURIComponent(query) %>&rank_token=<%= rankToken %>',
   hashtagsInfo: 'tags/<%= encodeURI(tag) %>/info',
@@ -70,8 +68,7 @@ export const ROUTES = {
     'zr/token/result/?custom_device_id=<%=cd_id%>&device_id=<%=d_id%>&fetch_reason=<%=fr%>&token_hash=<%=th%>',
   contactPointPrefill: 'accounts/contact_point_prefill/',
   discoverAyml: 'discover/ayml/',
-  exploreFeed:
-    'discover/explore/?is_prefetch=<%=is_prefetch%>&is_from_promote=false&timezone_offset=2&session_id=<%=session_id%>&supported_capabilities_new=<%=supported_capabilities_new%>&max_id=0&module=explore_popular',
+  exploreFeed: 'discover/explore/?is_prefetch=<%=is_prefetch%>&is_from_promote=false&timezone_offset=2&session_id=<%=session_id%>&supported_capabilities_new=<%=supported_capabilities_new%>&max_id=0&module=explore_popular',
   inbox: 'direct_v2/inbox/?persistentBadging=true&use_unified_inbox=true<%= cursor ? ("&cursor=" + cursor) : "" %>',
   inboxPending: 'direct_v2/pending_inbox/<%= maxId ? ("?max_id=" + maxId) : "" %>',
   threads: 'direct_v2/threads/?user_ids=<% JSON.stringify(threads) %>',
@@ -101,6 +98,9 @@ export const ROUTES = {
   unsave: 'media/<%= id %>/unsave/',
   userStory: 'feed/reels_media/',
   storyTray: 'feed/reels_tray/',
+  storyCapabilities: 'feed/user/<%= id %>/story/?supported_capabilities_new=<%=supported_capabilities_new%>',
+  userHighlightsTray: 'highlights/<%= id %>/highlights_tray/?supported_capabilities_new=<%= supported_capabilities_new %>&phone_id=<%= phone_id %>&battery_level=100&is_charging=1&will_sound_on=0',
+  mediaCommentInfo: 'media/<%= id %>/comment_info/'
 };
 
 export const WEB_ROUTES = {

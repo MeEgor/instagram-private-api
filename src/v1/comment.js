@@ -2,6 +2,8 @@ import { plainToClass } from 'class-transformer';
 import { User } from '../models/user';
 import { Request } from '../core/request';
 
+
+const Helpers = require('../helpers');
 const Resource = require('./resource');
 const _ = require('lodash');
 const crypto = require('crypto');
@@ -16,9 +18,7 @@ function base64encode(string) {
 }
 
 function hashHmac(data, key) {
-  const hmac = crypto.createHmac('sha256', key)
-  hmac.update(data)
-  return hmac.digest('binary')
+  return crypto.createHmac('SHA256', key).update(data).digest()
 }
 
 function generateUserBreadcrumb(text) {
@@ -40,18 +40,18 @@ function generateUserBreadcrumb(text) {
 
 class Comment extends Resource {
 
-  static async create (session, mediaId, text) {
+  static async create (session, mediaId, text, moduleName) {
     return new Request(session)
       .setMethod('POST')
       .setResource('comment', { id: mediaId })
       .generateUUID()
       .setData({
         user_breadcrumb: generateUserBreadcrumb(text),
-        idempotence_token: crypto.createHash('md5').update(text).digest('hex'),
+        idempotence_token: Helpers.Helpers.generateUUID(),
         _uid: await session.getAccountId(),
         comment_text: text,
         radio_type: 'wifi-none',
-        containermodule: 'comments_feed_timeline',
+        containermodule: moduleName,
       })
       .signPayload()
       .send()

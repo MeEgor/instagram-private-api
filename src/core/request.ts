@@ -337,7 +337,7 @@ export class Request {
       const parsedResponse = this.parseMiddleware(rawResponse);
       const json = parsedResponse.body;
 
-      console.log("RESPONSE: <-", JSON.stringify(json))
+      // console.log("RESPONSE: <-", JSON.stringify(json))
 
       if (_.isObject(json) && json.status === 'ok') return _.omit(parsedResponse.body, 'status');
       if (_.isString(json.message) && json.message.toLowerCase().includes('transcode timeout'))
@@ -376,13 +376,13 @@ export class Request {
     const requestOptions = this._transform(_.defaults(this._mergeOptions(options), preparedData));
     
     console.log("REQUEST ->", requestOptions.method, requestOptions.url)
-    console.log("HEADERS:")
-    Object.keys(requestOptions.headers).forEach(k => {
-      console.log(`    ${k} => ${requestOptions.headers[k]}`)
-    })
-    if (requestOptions.formData) {
-      console.log("FORM DATA:", JSON.stringify(requestOptions.formData))
-    }
+    // console.log("HEADERS:")
+    // Object.keys(requestOptions.headers).forEach(k => {
+    //   console.log(`    ${k} => ${requestOptions.headers[k]}`)
+    // })
+    // if (requestOptions.formData) {
+    //   console.log("FORM DATA:", JSON.stringify(requestOptions.formData))
+    // }
     
     return Request.requestClient(requestOptions);
   }
