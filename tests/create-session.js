@@ -19,6 +19,7 @@ function createSession() {
         .then(accountId => {
           const feed = new Client.Feed.UserMedia(session, accountId)
           return feed.get().then(medias => {
+            debugger
             console.log("SUCCESS! -> medias", medias.length)
           })
         })
@@ -43,6 +44,8 @@ function createSession() {
     })
     .catch(err => console.log("ERROR:", err.message))
 }
+
+createSession()
 
 // const mediaId = "1844223108983287281_5932999115"
 // const text = "Foo Bar"
@@ -234,12 +237,12 @@ function sendCommentAndLike(userNameToComment, mediaIdToComment, text) {
   })
 }
 
-sendCommentAndLike("zordon.100", "1844216699029557807_5932999115", "Very beautifull, love it!").then(data => {
-  debugger
-})
-.catch(err => {
-  debugger
-})
+// sendCommentAndLike("zordon.100", "1844216699029557807_5932999115", "Very beautifull, love it!").then(data => {
+//   debugger
+// })
+// .catch(err => {
+//   debugger
+// })
   
 
 

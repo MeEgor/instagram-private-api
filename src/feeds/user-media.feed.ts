@@ -5,7 +5,12 @@ import { AbstractFeed } from './abstract.feed';
 import { Session } from 'src/core/session';
 
 export class UserMediaFeed extends AbstractFeed<Media> {
-  constructor(session: Session, public accountId: string | number, public limit = Infinity) {
+  constructor(
+    session: Session, 
+    public accountId: string | number, 
+    public limit = Infinity, 
+    public withComments = true
+  ) {
     super(session);
   }
 
@@ -15,6 +20,7 @@ export class UserMediaFeed extends AbstractFeed<Media> {
       .setResource('userFeed', {
         id: this.accountId,
         maxId: this.getCursor(),
+        withComments: this.withComments
       })
       .send()
 
