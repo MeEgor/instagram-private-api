@@ -25,4 +25,8 @@ export class Comment extends AbstractModel {
   get account() {
     return this.user;
   }
+
+  get id(): string {
+    return this.pk.toString()
+  }
 }

@@ -20,72 +20,75 @@ export abstract class AbstractFeed<T> extends EventEmitter {
   moreAvailable = null;
   iteration = 0;
   // Pause multiplier.
-  parseErrorsMultiplier = 0;
-  public rankToken: string;
-  limit: number;
-  _stopAll: boolean = false;
-  public timeout: number;
-  private allResultsMap: any;
-  private _allResultsLentgh: number;
+  parseErrorsMultiplier = 0
+  public rankToken: string
+  limit: number
+  _stopAll: boolean = false
+  public timeout: number
+  private allResultsMap: Object = {}
+  private _allResultsLentgh: number = 0
 
   protected constructor(public session: Session) {
-    super();
-    const chance = new Chance();
-    this.rankToken = chance.guid();
+    super()
+    const chance = new Chance()
+    this.rankToken = chance.guid()
   }
 
   abstract async get(...parameters: any[]): Promise<T[]>
 
-  all(parameters: Partial<IBaseFeedAllOptions> = {}) {
+  all (parameters: Partial<IBaseFeedAllOptions> = {}) {
     parameters = Object.assign({
       delay: 1500,
       every: 200,
       pause: 30000,
       maxErrors: 9,
       limit: this.limit || Infinity,
-    }, parameters);
+    }, parameters)
     // every N requests we take a pause
-    const delay =
-      this.iteration === 0 ? 0 : this.iteration % parameters.every !== 0 ? parameters.delay : parameters.pause;
+    const delay = this.iteration === 0 ?
+      0 : this.iteration % parameters.every !== 0 ? 
+        parameters.delay : parameters.pause
+
     return (
       Bluebird.delay(delay)
         .then(this.get.bind(this))
         .then(results => {
           // reset pause multiplier when we can execute requests again
-          this.parseErrorsMultiplier = 0;
-          return results;
+          this.parseErrorsMultiplier = 0
+          return results
         })
         // If ParseError, we assume that this is 403 forbidden HTML page, caused by "Too many requests". Just take a pause and retry.
         .catch(ParseError, () => {
           // Every consecutive ParseError makes delay befor new request longer. Otherwise we will never reach the end.
-          this.parseErrorsMultiplier++;
+          this.parseErrorsMultiplier ++
           // When delay time is beyond reasonable, throw exception.
-          if (this.parseErrorsMultiplier > parameters.maxErrors) throw new RequestsLimitError();
+          if (this.parseErrorsMultiplier > parameters.maxErrors) {
+            throw new RequestsLimitError()
+          }
           return Bluebird.resolve([]).delay(parameters.pause * this.parseErrorsMultiplier);
         })
         .then((response: Array<any>) => {
-          const results = response.filter(this.filter).map(this.map);
-          if (_.isFunction(this.reduce)) this.allResults = this.reduce(this.allResults, results);
-          this.totalCollected += response.length;
+          const results = response.filter(this.filter).map(this.map)
+          if (_.isFunction(this.reduce)) this.allResults = this.reduce(this.allResults, results)
+          this.totalCollected += response.length
 
-          this._handleInfinityListBug(response, results);
+          this._handleInfinityListBug(response, results)
 
-          this.emit('data', results);
-          let exceedLimit = false;
-
-          if ((parameters.limit && this.totalCollected > parameters.limit) || this._stopAll === true)
-            exceedLimit = true;
-
+          this.emit('data', results)
+          let exceedLimit = false
+          if ((parameters.limit && this.totalCollected > parameters.limit) || this._stopAll === true) {
+            exceedLimit = true
+          }
           if (this.isMoreAvailable() && !exceedLimit) {
-            this.iteration++;
-            return this.all(parameters);
+            this.iteration ++
+            return this.all(parameters)
           } else {
-            this.iteration = 0;
-            this.emit('end', this.allResults);
-            return this.allResults;
+            this.iteration = 0
+            this.emit('end', this.allResults)
+            return this.allResults
           }
         })
-    );
+    )
   }
 
   /* This function is designed for response realtime processing when .all method is in progress.
@@ -123,19 +126,22 @@ export abstract class AbstractFeed<T> extends EventEmitter {
    * To see this bug try to collect AccountFollowingFeed of id 1571836453 */
 
   _handleInfinityListBug(response, results) {
-    const that = this;
+    const that = this
     /* For RAM economy we can store only 2 last results, not all. So every 2 iterations we release memory  */
-    if (this.iteration % 2 === 0) {
-      this.allResultsMap = {};
-      this._allResultsLentgh = 0;
+    if (this.iteration != 0 && this.iteration % 2 === 0) {
+      this.allResultsMap = {}
+      this._allResultsLentgh = 0
     }
-    this._allResultsLentgh += response.length;
+
+    this._allResultsLentgh += response.length
 
     response.forEach(result => {
-      that.allResultsMap[result.id] = undefined;
-    });
+      that.allResultsMap[result.id] = undefined
+    })
 
-    if (_.keys(this.allResultsMap).length !== this._allResultsLentgh) this.stop();
+    if (Object.keys(this.allResultsMap).length !== this._allResultsLentgh) {
+      this.stop()
+    }
   }
 
   // Stops collecting results with .all() method. Will wait unfinished request.

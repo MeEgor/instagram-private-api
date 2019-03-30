@@ -46,7 +46,7 @@ function createSession() {
     .catch(err => console.log("ERROR:", err.message))
 }
 
-createSession()
+// createSession()
 
 // const mediaId = "1844223108983287281_5932999115"
 // const text = "Foo Bar"
@@ -180,6 +180,16 @@ function selectUser(session, user) {
     }
   })
 }
+
+Client.Session.create(device, storage, userName, password, proxy)
+.then(s => {
+  const feed = new Client.Feed.MediaComments(s, "1992056488021287687_2975796042")
+  feed.limit = 50
+  return feed.all()
+})
+.then(c => {
+
+})
 
 /**
  * Load commments
