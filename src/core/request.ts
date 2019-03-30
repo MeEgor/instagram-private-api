@@ -380,9 +380,9 @@ export class Request {
     // Object.keys(requestOptions.headers).forEach(k => {
     //   console.log(`    ${k} => ${requestOptions.headers[k]}`)
     // })
-    // if (requestOptions.formData) {
-    //   console.log("FORM DATA:", JSON.stringify(requestOptions.formData))
-    // }
+    if (requestOptions.formData) {
+      console.log("FORM DATA:", Object.keys(requestOptions.formData).map(k => `${k}=${JSON.stringify(requestOptions.formData[k])}`).join("&"))
+    }
     
     return Request.requestClient(requestOptions);
   }

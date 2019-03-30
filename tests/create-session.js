@@ -36,7 +36,7 @@ function createSession() {
             })
             .then(comment => {
               console.log("SUCCESS! -> commrnt created", comment.params)
-              return Client.Comment.delete(session, mediaId, comment.id)
+              return Client.Comment.bulkDelete(session, mediaId, [comment.id])
             })
             .then(data => {
               console.log("SUCCESS! -> comment deleted", data)

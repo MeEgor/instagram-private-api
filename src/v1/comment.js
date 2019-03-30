@@ -71,23 +71,17 @@ class Comment extends Resource {
       .then(data => data);
   }
 
-  static bulkDelete (session, mediaId, commentIds) {
+  static async bulkDelete (session, mediaId, commentIds) {
     return new Request(session)
       .setMethod('POST')
       .setResource('commentBulkDelete', { id: mediaId })
       .generateUUID()
       .setData({
-        media_id: mediaId,
-        comment_ids_to_delete: commentIds.join(','),
-        src: 'profile',
-        idempotence_token: crypto
-          .createHash('md5')
-          .update(commentIds.join(','))
-          .digest('hex'),
+        _uid: await session.getAccountId(),
+        comment_ids_to_delete: commentIds.join(',')
       })
       .signPayload()
       .send()
-      .then(data => data);
   }
 
   static like (session, commentId) {
